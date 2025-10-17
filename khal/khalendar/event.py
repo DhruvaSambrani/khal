@@ -431,14 +431,17 @@ class Event:
             else:
                 leap = ''
             if (number - 1) % 10 == 0 and number != 11:
-                suffix = 'st'
+                suffix = 'st '
             elif (number - 2) % 10 == 0 and number != 12:
-                suffix = 'nd'
+                suffix = 'nd '
             elif (number - 3) % 10 == 0 and number != 13:
-                suffix = 'rd'
+                suffix = 'rd '
             else:
-                suffix = 'th'
-            return f'{name}\'s {number}{suffix} {description}{leap}'
+                suffix = 'th '
+            if int(date[:4]) == 1604:
+                number = ''
+                suffix = ''
+            return f'{name}\'s {number}{suffix}{description}{leap}'
         else:
             return self._vevents[self.ref].get('SUMMARY', '')
 
