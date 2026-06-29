@@ -41,6 +41,7 @@ from khal.custom_types import EventTuple, LocaleConfiguration
 from khal.icalendar import assert_only_one_uid, cal_from_ics
 from khal.icalendar import expand as expand_vevent
 from khal.icalendar import sanitize as sanitize_vevent
+from khal.icalendar import sanitize_vtodo
 from khal.icalendar import sort_key as sort_vevent_key
 
 from .exceptions import CouldNotCreateDbDir, NonUniqueUID, OutdatedDbVersionError, UpdateFailed
@@ -54,6 +55,11 @@ THISANDFUTURE = "THISANDFUTURE"
 THISANDPRIOR = "THISANDPRIOR"
 
 PROTO = "PROTO"
+
+SANITIZE_MAP = {
+    "VEVENT": sanitize_vevent,
+    "VTODO": sanitize_vtodo,
+}
 
 
 class EventType(IntEnum):
@@ -234,9 +240,9 @@ class SQLiteDb:
             )
             raise NonUniqueUID
         vevents = (
-            sanitize_vevent(c, self.locale["default_timezone"], href, calendar)
+            SANITIZE_MAP[c.name](c, self.locale["default_timezone"], href, calendar)
             for c in ical.walk()
-            if c.name == "VEVENT"
+            if c.name in SANITIZE_MAP.keys()
         )
         # Need to delete the whole event in case we are updating a
         # recurring event with an event which is either not recurring any

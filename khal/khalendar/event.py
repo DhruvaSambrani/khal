@@ -166,9 +166,9 @@ class Event:
         return instcls(vevents, ref=ref, start=start, **kwargs)
 
     @classmethod
-    def fromString(cls, ics: str, ref=None, **kwargs) -> "Event":
-        calendar_collection = cal_from_ics(ics)
-        events = [item for item in calendar_collection.walk() if item.name == "VEVENT"]
+    def fromString(cls, event_str, ref=None, **kwargs):
+        calendar_collection = cal_from_ics(event_str)
+        events = [item for item in calendar_collection.walk() if item.name in ['VEVENT', 'VTODO']]
         return cls.fromVEvents(events, ref, **kwargs)
 
     def __lt__(self, other: "Event") -> bool:
@@ -301,6 +301,7 @@ class Event:
                 "tentative": "?",
                 "declined": "\N{CROSS MARK}",
                 "accepted": "\N{HEAVY CHECK MARK}",
+                "task": "\N{PENCIL}",
             }
         else:
             return {
@@ -315,6 +316,7 @@ class Event:
                 "tentative": "?",
                 "declined": "X",
                 "accepted": "V",
+                "task": "(T)",
             }
 
     @property
@@ -331,6 +333,24 @@ class Event:
     def start(self) -> dt.datetime:
         """this should return the start date(time) as saved in the event"""
         return self._start
+
+    @property
+    def task(self):
+        """this should return whether or not we are representing a task"""
+        return self._vevents[self.ref].name == 'VTODO'
+
+    @property
+    def task_status(self):
+        """nice representation of a task status"""
+        vstatus = self._vevents[self.ref].get('STATUS', 'NEEDS-ACTION')
+        status = ' '
+        if vstatus == 'COMPLETED':
+            status = 'X'
+        elif vstatus == 'IN-PROGRESS':
+            status = '/'
+        elif vstatus == 'CANCELLED':
+            status = '-'
+        return status
 
     @property
     def end(self) -> dt.datetime:
@@ -448,7 +468,10 @@ class Event:
                 suffix = ''
             return f'{name}\'s {number}{suffix}{description}{leap}'
         else:
-            return self._vevents[self.ref].get("SUMMARY", "")
+            summary = self._vevents[self.ref].get('SUMMARY', '')
+            if self.task:
+                summary = f'[{self.task_status}] {summary}'
+            return summary
 
     def update_summary(self, summary: str) -> None:
         self._vevents[self.ref]["SUMMARY"] = summary
@@ -605,6 +628,13 @@ class Event:
             partstatstr = ""
         return partstatstr
 
+    def _task_str(self):
+        if self.task:
+            taskstr = ' ' + self.symbol_strings['task']
+        else:
+            taskstr = ''
+        return taskstr
+
     def attributes(
         self,
         relative_to: tuple[dt.date, dt.date] | dt.date,
@@ -748,6 +778,7 @@ class Event:
         ]
         attributes["status-symbol"] = self._status_str
         attributes["partstat-symbol"] = self._partstat_str
+        attributes["task-symbol"] = self._task_str
         attributes["title"] = self.summary
         attributes["organizer"] = self.organizer.strip()
 
@@ -860,7 +891,8 @@ class LocalizedEvent(DatetimeEvent):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         try:
-            starttz = getattr(self._vevents[self.ref]["DTSTART"].dt, "tzinfo", None)
+            sattr = 'DUE' if self.task else 'DTSTART'
+            starttz = getattr(self._vevents[self.ref][sattr].dt, 'tzinfo', None)
         except KeyError:
             msg = (
                 f"Cannot understand event {kwargs.get('href')} from "
