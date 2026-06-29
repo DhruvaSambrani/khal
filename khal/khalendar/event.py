@@ -301,7 +301,7 @@ class Event:
                 "tentative": "?",
                 "declined": "\N{CROSS MARK}",
                 "accepted": "\N{HEAVY CHECK MARK}",
-                "task": "\N{PENCIL}",
+                "task": "\N{MEMO}",
             }
         else:
             return {
@@ -628,11 +628,12 @@ class Event:
             partstatstr = ""
         return partstatstr
 
+    @property
     def _task_str(self):
         if self.task:
-            taskstr = ' ' + self.symbol_strings['task']
+            taskstr = " " + self.symbol_strings['task'] + " "
         else:
-            taskstr = ''
+            taskstr = ""
         return taskstr
 
     def attributes(
