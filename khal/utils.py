@@ -252,6 +252,7 @@ CONTENT_ATTRIBUTES = [
     "repeat-symbol",
     "repeat-pattern",
     "alarms-list",
+    "is-task",
     "title",
     "organizer",
     "description",

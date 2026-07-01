@@ -830,6 +830,8 @@ class Event:
 
         attributes["status"] = self.status + " " if self.status else ""
         attributes["cancelled"] = "CANCELLED " if self.status == "CANCELLED" else ""
+
+        attributes["is-task"] = bool(self.task)
         return attributes
 
     def duplicate(self) -> "Event":
