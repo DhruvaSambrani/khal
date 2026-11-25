@@ -152,7 +152,7 @@ class Event:
                 vevents["PROTO"] = event
 
         if ref is None:
-            ref = "PROTO" if ref in vevents.keys() else list(vevents.keys())[0]
+            ref = "PROTO" if ref in vevents else list(vevents.keys())[0]
         try:
             if type(vevents[ref]["DTSTART"].dt) is not type(vevents[ref]["DTEND"].dt):
                 raise ValueError("DTSTART and DTEND should be of the same type (datetime or date)")
@@ -796,6 +796,9 @@ class Event:
         if attributes["description"]:
             attributes["description-separator"] = " :: "
         attributes["location"] = self.location.strip()
+        attributes["location-separator"] = ""
+        if attributes["location"]:
+            attributes["location-separator"] = " @ "
         attributes["attendees"] = self.attendees
         attributes["all-day"] = str(allday)
         attributes["categories"] = self.categories
